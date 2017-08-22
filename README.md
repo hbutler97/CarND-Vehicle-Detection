@@ -1,33 +1,112 @@
-# Vehicle Detection
-[![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
+[//]: # (Image References)
+
+[image1]: ./output_images/header.png "Header"
+[image2]: ./output_images/color_hist.png
+[image3]: ./output_images/comb_hist_norm.png
+[image4]: ./output_images/final.png
+[image5]: ./output_images/heat_map1.png
+[image6]: ./output_images/heat_map.png
+[image7]: ./output_images/hog_vis.png
+[image8]: ./output_images/spatial_hist.png
+[image9]: ./output_images/svc_data.png
+
+![alt text][image1]
+## **Overview**
+
+The purpose of this project is to use computer vision techniques to locate vehicles in an image.  Techniques include Color Histogram Template Matching, Spatial Binning and Histogram of Oriented Gradients(HOG).  Data is used to train a Support Vector Machine Classifier(SVC).  The classifier is used in a software pipeline to locate and draw bounding boxes are drawn around vehicles original image.  
+
+Link to [project code](https://github.com/hbutler97/CarND-Vehicle-Detection/blob/master/find_vehicle.ipynb)
+
+Link to [Result YouTube Video](https://youtu.be/6Aso3oK-GjY)
 
 
-In this project, your goal is to write a software pipeline to detect vehicles in a video (start with the test_video.mp4 and later implement on full project_video.mp4), but the main output or product we want you to create is a detailed writeup of the project.  Check out the [writeup template](https://github.com/udacity/CarND-Vehicle-Detection/blob/master/writeup_template.md) for this project and use it as a starting point for creating your own writeup.  
 
-Creating a great writeup:
----
-A great writeup should include the rubric points as well as your description of how you addressed each point.  You should include a detailed description of the code used in each step (with line-number references and code snippets where necessary), and links to other supporting documents or external references.  You should include images in your writeup to demonstrate how your code works with examples.  
+## **Feature Extraction for SVC Training**
 
-All that said, please be concise!  We're not looking for you to write a book here, just a brief description of how you passed each rubric point, and references to the relevant code :). 
+Prior to training the classifier, serveral types features are extracted out the image to locate the object of interest(vehicles).  Differentiating features include color and shape. 
 
-You can submit your writeup in markdown or use another method and submit a pdf instead.
+### **Color Histogram**
 
-The Project
----
+A histogram of the color channels are extracted from the image and concatenated to a single vector.  This is done in a function called color_hist().  Results are shown below.
 
-The goals / steps of this project are the following:
+![alt text][image2]
 
-* Perform a Histogram of Oriented Gradients (HOG) feature extraction on a labeled training set of images and train a classifier Linear SVM classifier
-* Optionally, you can also apply a color transform and append binned color features, as well as histograms of color, to your HOG feature vector. 
-* Note: for those first two steps don't forget to normalize your features and randomize a selection for training and testing.
-* Implement a sliding-window technique and use your trained classifier to search for vehicles in images.
-* Run your pipeline on a video stream (start with the test_video.mp4 and later implement on full project_video.mp4) and create a heat map of recurring detections frame by frame to reject outliers and follow detected vehicles.
-* Estimate a bounding box for vehicles detected.
+### **Spatial Binning**
 
-Here are links to the labeled data for [vehicle](https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/vehicles.zip) and [non-vehicle](https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/non-vehicles.zip) examples to train your classifier.  These example images come from a combination of the [GTI vehicle image database](http://www.gti.ssr.upm.es/data/Vehicle_database.html), the [KITTI vision benchmark suite](http://www.cvlibs.net/datasets/kitti/), and examples extracted from the project video itself.   You are welcome and encouraged to take advantage of the recently released [Udacity labeled dataset](https://github.com/udacity/self-driving-car/tree/master/annotations) to augment your training data.  
+To generalize the features a bit more the image resolution is reduced such that relevant features are still recognizable, but general enough to be useful to locate vehicles. This is done in a function called bin_spatial() Results are shown below.
 
-Some example images for testing your pipeline on single frames are located in the `test_images` folder.  To help the reviewer examine your work, please save examples of the output from each stage of your pipeline in the folder called `ouput_images`, and include them in your writeup for the project by describing what each image shows.    The video called `project_video.mp4` is the video your pipeline should work well on.  
+![alt text][image8]
 
-**As an optional challenge** Once you have a working pipeline for vehicle detection, add in your lane-finding algorithm from the last project to do simultaneous lane-finding and vehicle detection!
+### **Histogram of Oriented Gradients**
 
-**If you're feeling ambitious** (also totally optional though), don't stop there!  We encourage you to go out and take video of your own, and show us how you would implement this project on a new video!
+Shape of the car is probably the easiest feature to recognize.  Histogram of Oriented Gradients(HOG), was used to extract information on the car's shape. This is done in a function called get_hog_features() Results are shown below.
+
+![alt text][image7]
+
+### **Feature Concatenation and Normalization**
+
+The features mentioned above were combined(concatenated) and normalized prior to be used for SVC Training.  This is done in a function called extract_features().  Results are shown below.
+
+![alt text][image3]
+
+## **Support Vector Machine Classifier Training**
+
+A Support Vector Machine Classifier was used to determine if features presented was an actual vehicle.  Multiple configurations for feature extraction was attempted to achieve reasonable training accuracy and ultimately good vehicle detection in the video stream.
+
+The table below shows some notable configurations that yielded reasonable performance.  Ultimately Configuration 5 performed the best on the video stream.  In addition to the configurations below, the percentage of the data set used for training was also changed from the typical 80% to 15%.  This was due to the training data being from a video stream and many of the images were the same.  It turned out that this didn't make a big difference in my case and ultimately ended up using 80% of the training set.
+
+A cell called Feature Extraction Globals has the configurations listed below.  Extract Features and Scale Results cell, does as titled. Lastly, there is a cell call Train Classifier. 
+
+![alt text][image9]
+
+
+## **Software Pipeline**
+
+The software pipeline used to detect the Vehicles.  High Level functions preformed by the pipeline are as follows:
+
+* Image Patch Scan(Sliding Window)
+
+  -Image is scanned using a sliding window(details below) and for each patch the following operations are preformed
+
+* HOG Feature Extraction
+* Spatial Binning Extraction
+* Color Histogram Extraction
+* Features Concatenation
+* Features Normalization
+* SVC Prediction
+* Bounding Box Drawing(for positive car detection)
+* False Positive Filtering
+
+
+### **Sliding Window**
+
+Sliding window was used to generate the patches to scan for vehicle detection.  The approach was to limit the region of interest to be in the area where cars should be detected...ie, there are not flying cars at the moment so we can limit the search to start at about the mid point on the Y axis.  For higher values on the Y axis, represent depth and as such the patch searched is smaller(scale is reduced) and as you move down the Y axis, the depth is reduced and as such the scale and patch size is increased.  Overlapping regions are used as the depth is reduced to improve detection resolution.  
+
+![alt text][image5]
+
+### **False Positive Filtering**
+
+As shown in the image above, duplicate and false positive detection can occur with this pipeline.  A heat map is created based on the number of detections and a threshold hold is applied to filter out the false positives. 
+
+![alt text][image6]
+
+## **Final Result**
+
+The pipeline described above produces the following image shown below.  The image below also include lane line detection as well.
+
+![alt text][image4]
+
+### **Video Results**
+
+Link to [Result YouTube Video](https://youtu.be/6Aso3oK-GjY) 
+
+### **Discussion**
+
+Training of the SVC seemed to produce very similar results independent of feature extraction parameters, including the amount of data used.  Ultimately the back-end filtering was adjusted to accommodate for the different behavior of the SVC.  In most cases, behavior different, but within reason.  It would have been interesting to try a different classifier to observe training behavior.
+
+Detection of the white car at distance seemed to be an issue.  It also seemed to be associated with the contrast with the road as well.  Again, other CV techniques and/or a different classifier would be interesting to investigate. 
+
+Improvement in detection will increase if the patch dimensions were chosen at a finer grain.  The expense would be processing time...  Techniques like using history and prediction to minimize computation would be one way to solve this problem. 
+
+
+
