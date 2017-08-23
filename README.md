@@ -17,7 +17,7 @@ The purpose of this project is to use computer vision techniques to locate vehic
 
 Link to [project code](https://github.com/hbutler97/CarND-Vehicle-Detection/blob/master/find_vehicle.ipynb)
 
-Link to [Result YouTube Video](https://youtu.be/6Aso3oK-GjY)
+Link to [Result YouTube Video](https://youtu.be/3SCqGUhmyxk)
 
 
 
@@ -98,7 +98,7 @@ The pipeline described above produces the following image shown below.  The imag
 
 ### **Video Results**
 
-Link to [Result YouTube Video](https://youtu.be/6Aso3oK-GjY) 
+Link to [Result YouTube Video](https://youtu.be/3SCqGUhmyxk) 
 
 ### **Discussion**
 
